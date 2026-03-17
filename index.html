@@ -1,9 +1,31 @@
+<!--
+   Analizator ogłoszeń.html
+   
+   Copyright 2026 Leszek Dąbrowski <lesdab@wp.pl>
+   
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+   MA 02110-1301, USA.
+   
+   
+-->
 <!DOCTYPE html>
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Analizator Ogłoszeń</title>
+<title>Analiza Ogłoszeń Pojazdów</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -177,7 +199,7 @@
   #report-section { display: none; animation: fadeUp 0.35s ease; }
   @keyframes fadeUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform:translateY(0); } }
 
-  .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 32px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 32px; }
 
   .stat-card {
     background: var(--surface); border: 1px solid var(--border);
@@ -187,12 +209,14 @@
   .stat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; }
   .stat-card.total::after    { background: var(--accent); }
   .stat-card.avg::after      { background: var(--accent2); }
+  .stat-card.avg-corr::after  { background: linear-gradient(90deg, #f59e0b, #f87171); }
   .stat-card.corrected::after{ background: linear-gradient(90deg, var(--green), var(--accent2)); }
 
   .stat-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
   .stat-value { font-family:'Syne',sans-serif; font-weight:700; font-size:26px; line-height:1; letter-spacing:-0.5px; }
   .stat-card.total .stat-value     { color: var(--accent); }
   .stat-card.avg .stat-value       { color: var(--accent2); }
+  .stat-card.avg-corr .stat-value  { color: #f59e0b; }
   .stat-card.corrected .stat-value { color: var(--green); }
   .stat-sub { font-size:11px; color:var(--muted); margin-top:6px; }
 
@@ -335,25 +359,16 @@
   }
   .ref-photo-clear:hover { border-color: var(--red); color: var(--red); }
 
-
-  /* COMMENT BOX */
-  .comment-box {
+  /* PRINT-ONLY: reference photo hidden on screen */
+  /* COMMENT PANEL */
+  .comment-panel {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--card-radius);
-    padding: 20px 22px;
+    padding: 22px 24px;
     margin-bottom: 28px;
-    position: relative;
   }
-  .comment-box::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    border-radius: var(--card-radius) var(--card-radius) 0 0;
-  }
-  .comment-box .section-label { margin-bottom: 10px; }
+  .comment-panel .section-label { margin-bottom: 10px; }
   .comment-textarea {
     width: 100%;
     min-height: 100px;
@@ -363,7 +378,7 @@
     color: #1a2a3a;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.65;
     padding: 10px 14px;
     resize: vertical;
     outline: none;
@@ -372,47 +387,38 @@
   .comment-textarea::placeholder { color: #7a96b0; }
   .comment-textarea:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(91,156,246,0.2);
+    box-shadow: 0 0 0 2px rgba(91,156,246,0.25);
   }
-  .comment-char-count {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    text-align: right;
-    margin-top: 5px;
-  }
+  .comment-hint { font-size: 11px; color: var(--muted); margin-top: 7px; }
 
-  /* PRINT: comment */
-  #comment-print {
-    display: none;
-    margin-bottom: 24px;
-    padding: 16px 18px;
-    border: 1px solid #c8d8ee;
-    border-radius: 8px;
-    background: #f4f7fb;
-    border-left: 4px solid #1a56a8;
-    page-break-inside: avoid;
-  }
-  #comment-print .cp-label {
-    font-size: 9px; font-weight: 700; letter-spacing: 2.5px;
-    text-transform: uppercase; color: #1a56a8;
-    margin-bottom: 8px; font-family: sans-serif;
-  }
-  #comment-print .cp-text {
-    font-size: 12px; color: #1e293b;
-    line-height: 1.7; white-space: pre-wrap;
-    font-family: sans-serif;
-  }
+  /* Print-only comment block */
+  .comment-print-block { display: none; }
 
-  /* PRINT-ONLY: reference photo hidden on screen */
   #ref-photo-print { display: none; }
+
 
   /* ─── ALL PRINT STYLES ─── */
   @media print {
     body { background: #fff !important; color: #111 !important; }
     body::before { display: none; }
     .form-area, .btn-row, #validation-msg, header .subtitle,
-    .ref-photo-panel, .btn-print { display: none !important; }
+    .ref-photo-panel, .btn-print, .comment-textarea, .comment-hint { display: none !important; }
+    .comment-panel {
+      background: #f4f7fb !important;
+      border: 1px solid #c8d8ee !important;
+      padding: 16px 20px !important;
+      margin-bottom: 0 !important;
+      break-inside: avoid;
+    }
+    .comment-print-block {
+      display: block !important;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: #1e293b !important;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
     #report-section { display: block !important; }
     .container { padding: 10px 16px; }
     header { margin-bottom: 16px; padding-bottom: 12px; }
@@ -426,10 +432,12 @@
     }
     .stat-card.total::after    { background: #1a56a8 !important; }
     .stat-card.avg::after      { background: #0ea5e9 !important; }
+    .stat-card.avg-corr::after { background: linear-gradient(90deg, #d97706, #dc2626) !important; }
     .stat-card.corrected::after{ background: #16a34a !important; }
     .stat-label, .price-label, .listing-index { color: #6b7280 !important; }
     .stat-value                 { color: #1a56a8 !important; }
     .stat-card.avg .stat-value  { color: #0369a1 !important; }
+    .stat-card.avg-corr .stat-value { color: #d97706 !important; }
     .stat-card.corrected .stat-value { color: #16a34a !important; }
     .stat-sub { color: #6b7280 !important; }
     .listing-url { color: #1a56a8 !important; word-break: break-all; }
@@ -441,10 +449,6 @@
     .divider-line    { background: #cbd5e1 !important; }
     .listings-grid   { grid-template-columns: repeat(2, 1fr) !important; }
     .listings-header .section-label { display: block !important; }
-    .comment-box { display: none !important; }
-    #comment-print.has-comment {
-      display: block !important;
-    }
     /* Reference photo — separate page at the end */
     #ref-photo-print.has-photo {
       display: block !important;
@@ -605,7 +609,7 @@
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
         Wyczyść
       </button>
-      <div class="counter-badge">Wpisy: <span id="count-num">0</span>/30</div>
+      <div class="counter-badge">Wpisy: <span id="count-num">0</span>/100</div>
     </div>
   </div>
 
@@ -624,6 +628,11 @@
         <div class="stat-value" id="stat-avg">—</div>
         <div class="stat-sub">przed korektami</div>
       </div>
+      <div class="stat-card avg-corr">
+        <div class="stat-label">Średnia korekta</div>
+        <div class="stat-value" id="stat-avg-corr">—</div>
+        <div class="stat-sub">średni % korekty</div>
+      </div>
       <div class="stat-card corrected">
         <div class="stat-label">Średnia po korekcie</div>
         <div class="stat-value" id="stat-corrected">—</div>
@@ -631,19 +640,17 @@
       </div>
     </div>
 
-    <!-- COMMENT BOX -->
-    <div class="comment-box">
-      <div class="section-label">▸ Komentarz do raportu</div>
-      <textarea class="comment-textarea" id="report-comment" maxlength="2000"
-        placeholder="Wpisz komentarz, wnioski lub uwagi — pojawią się na wydruku pod podsumowaniem..."
-        oninput="updateCharCount(this)"></textarea>
-      <div class="comment-char-count"><span id="char-count">0</span> / 2000</div>
-    </div>
-
-    <!-- PRINT-ONLY comment -->
-    <div id="comment-print">
-      <div class="cp-label">Komentarz</div>
-      <div class="cp-text" id="comment-print-text"></div>
+    <!-- KOMENTARZE -->
+    <div class="comment-panel">
+      <div class="section-label">▸ Komentarze</div>
+      <textarea
+        class="comment-textarea"
+        id="comment-textarea"
+        placeholder="Wpisz komentarz, który pojawi się na wydruku pod wyliczeniami…"
+        oninput="document.getElementById('comment-print-block').textContent = this.value"
+      ></textarea>
+      <div class="comment-hint">Tekst pojawi się na wydruku pod tabelą statystyk.</div>
+      <div class="comment-print-block" id="comment-print-block"></div>
     </div>
 
     <div class="listings-header">
@@ -764,7 +771,7 @@
   let reportData = [];
 
   function addEntry() {
-    if (entries.length >= 30) return;
+    if (entries.length >= 100) return;
     entries.push({ id: ++idCounter, url:'', imgUrl:'', price:'', correction:'' });
     renderEntries();
     updateCounter();
@@ -803,7 +810,7 @@
       `;
       list.appendChild(row);
     });
-    document.getElementById('add-btn').disabled = entries.length >= 30;
+    document.getElementById('add-btn').disabled = entries.length >= 100;
   }
 
   function upd(id, key, val) {
@@ -813,16 +820,6 @@
 
   function updateCounter() {
     document.getElementById('count-num').textContent = entries.length;
-  }
-
-  function updateCharCount(el) {
-    document.getElementById('char-count').textContent = el.value.length;
-    // sync to print element
-    const txt = el.value.trim();
-    const printEl = document.getElementById('comment-print');
-    document.getElementById('comment-print-text').textContent = txt;
-    if (txt) { printEl.classList.add('has-comment'); }
-    else      { printEl.classList.remove('has-comment'); }
   }
 
   function showValidation(msg) {
@@ -874,16 +871,32 @@
       return url.length > 3 && !isNaN(price) && price > 0;
     });
     if (valid.length < 2)  { showValidation('⚠ Wprowadź co najmniej 2 ogłoszenia z wypełnionym linkiem i ceną.'); return; }
-    if (valid.length > 30) { showValidation('⚠ Maksymalna liczba ogłoszeń wynosi 30.'); return; }
+    if (valid.length > 100) { showValidation('⚠ Maksymalna liczba ogłoszeń wynosi 100.'); return; }
 
     const prices   = valid.map(e => parseFloat(e.price));
-    const corrPcts = valid.map(e => parseFloat(e.correction) || 0);
+    const corrPcts = valid.map(e => { const v = parseFloat(e.correction); return isNaN(v) ? 0 : v; });
     const finals   = prices.map((p,i) => p * (1 + corrPcts[i]/100));
     const avg      = prices.reduce((a,b)=>a+b,0) / prices.length;
     const avgCorr  = finals.reduce((a,b)=>a+b,0) / finals.length;
 
+    // Średnia korekty — tylko wpisy z jawnie wpisaną korektą (nie puste)
+    const enteredCorrs = valid
+      .map(e => e.correction.toString().trim())
+      .filter(s => s !== '')
+      .map(s => parseFloat(s))
+      .filter(v => !isNaN(v));
+    const avgCorrPct = enteredCorrs.length > 0
+      ? enteredCorrs.reduce((a,b)=>a+b,0) / enteredCorrs.length
+      : null;
+
     document.getElementById('stat-count').textContent     = valid.length;
     document.getElementById('stat-avg').textContent       = formatPLN(avg);
+    if (avgCorrPct !== null) {
+      const corrSign = avgCorrPct > 0 ? '+' : '';
+      document.getElementById('stat-avg-corr').textContent = corrSign + avgCorrPct.toFixed(2) + '%';
+    } else {
+      document.getElementById('stat-avg-corr').textContent = '—';
+    }
     document.getElementById('stat-corrected').textContent = formatPLN(avgCorr);
 
     reportData = valid.map((e,i) => ({
@@ -1249,7 +1262,7 @@
       const url   = (row[colUrl]   || '').trim();
       const price = extractPrice((row[colPrice] || '').toString());
       if (!url || !price || isNaN(parseFloat(price))) { skipped++; return; }
-      if (entries.length >= 30) { skipped++; return; }
+      if (entries.length >= 100) { skipped++; return; }
       entries.push({
         id: ++idCounter,
         url,
@@ -1263,7 +1276,7 @@
     renderEntries(); updateCounter();
     closeImportModal();
     if (skipped > 0)
-      showValidation('⚠ Zaimportowano ' + added + ' wierszy. Pominięto ' + skipped + ' (brak URL/ceny lub limit 30).');
+      showValidation('⚠ Zaimportowano ' + added + ' wierszy. Pominięto ' + skipped + ' (brak URL/ceny lub limit 100).');
     else {
       hideValidation();
     }
