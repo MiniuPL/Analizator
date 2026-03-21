@@ -46,23 +46,43 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
   body {
     background: var(--bg);
     color: var(--text);
     font-family: 'DM Sans', sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
+  /* ── Background: radial glows + subtle dot grid ── */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     background-image:
-      radial-gradient(ellipse 80% 60% at 10% 0%, rgba(91,156,246,0.09) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 90% 100%, rgba(56,189,248,0.07) 0%, transparent 60%);
+      radial-gradient(ellipse 80% 60% at 10% 0%, rgba(91,156,246,0.11) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 100%, rgba(56,189,248,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(91,156,246,0.03) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(91,156,246,0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.45;
   }
 
   .container {
@@ -80,16 +100,26 @@
     gap: 20px;
     border-bottom: 1px solid var(--border);
     padding-bottom: 28px;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    width: 80px; height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
   }
 
   .logo-mark {
     width: 48px; height: 48px;
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     font-family: 'Syne', sans-serif;
-    font-weight: 800; font-size: 22px;
+    font-weight: 800; font-size: 15px;
+    letter-spacing: 0.5px;
     color: #060d1a; flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(91,156,246,0.35);
   }
 
   h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.5px; line-height: 1.1; }
@@ -98,15 +128,26 @@
 
   .section-label {
     font-family: 'DM Mono', monospace;
-    font-size: 10px; letter-spacing: 2px;
+    font-size: 10px; letter-spacing: 2.5px;
     text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    flex-shrink: 0;
   }
 
   .form-area {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
     border-radius: var(--card-radius);
     padding: 28px; margin-bottom: 24px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.2);
   }
 
   .entries-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
@@ -178,8 +219,8 @@
   }
   .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
   .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-primary { background: var(--accent); color: #0e0f13; }
-  .btn-primary:hover { background: #f0d060; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,156,246,0.4); }
+  .btn-primary { background: var(--accent); color: #0a0f1a; }
+  .btn-primary:hover { background: #7ab8ff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(91,156,246,0.45); }
   .btn-print { background: #1a56a8; color: #ddeeff; border: 1px solid #2a70c8; }
   .btn-print:hover { background: #2060c0; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,156,246,0.35); }
   .btn-danger { background: transparent; border: 1px solid var(--border); color: var(--muted); }
@@ -188,7 +229,8 @@
   .counter-badge {
     font-family: 'DM Mono', monospace; font-size: 11px;
     background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 20px; padding: 4px 10px; color: var(--muted); margin-left: auto;
+    border-radius: 20px; padding: 5px 12px; color: var(--muted); margin-left: auto;
+    letter-spacing: 0.5px;
   }
   .counter-badge span { color: var(--accent); font-weight: 500; }
 
@@ -205,7 +247,14 @@
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--card-radius); padding: 20px 22px;
     position: relative; overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    cursor: default;
   }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.25); }
+  .stat-card.total:hover   { border-color: rgba(91,156,246,0.5); box-shadow: 0 8px 28px rgba(91,156,246,0.12); }
+  .stat-card.avg:hover     { border-color: rgba(56,189,248,0.5); box-shadow: 0 8px 28px rgba(56,189,248,0.12); }
+  .stat-card.avg-corr:hover { border-color: rgba(245,158,11,0.5); box-shadow: 0 8px 28px rgba(245,158,11,0.10); }
+  .stat-card.corrected:hover{ border-color: rgba(74,222,128,0.5); box-shadow: 0 8px 28px rgba(74,222,128,0.10); }
   .stat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; }
   .stat-card.total::after    { background: var(--accent); }
   .stat-card.avg::after      { background: var(--accent2); }
@@ -226,9 +275,18 @@
   .listing-card {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--card-radius); overflow:hidden;
-    transition: transform 0.2s, border-color 0.2s; position:relative;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; position:relative;
   }
-  .listing-card:hover { transform: translateY(-3px); border-color: rgba(91,156,246,0.4); }
+  .listing-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 1;
+  }
+  .listing-card:hover { transform: translateY(-4px); border-color: rgba(91,156,246,0.35); box-shadow: 0 12px 36px rgba(0,0,0,0.3); }
+  .listing-card:hover::before { opacity: 1; }
 
   .thumb-container { width:100%; height:200px; overflow:hidden; background:var(--surface2); }
   .thumb-container img { width:100%; height:200px; object-fit:cover; display:block; }
@@ -296,23 +354,91 @@
     white-space: nowrap;
   }
   .bulk-bar .pct-wrap { width: 110px; flex-shrink: 0; }
+  /* PORTAL TILES */
+  .portals-bar {
+    margin-bottom: 16px;
+  }
+  .portals-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--accent);
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .portals-label::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+    border-radius: 2px; flex-shrink: 0;
+  }
+  .portals-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .portal-tile {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.18s;
+    position: relative;
+    overflow: hidden;
+  }
+  .portal-tile::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--pc, var(--accent));
+    opacity: 0;
+    transition: opacity 0.18s;
+  }
+  .portal-tile:hover {
+    border-color: var(--pc, var(--accent));
+    color: var(--text);
+    background: var(--surface2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  }
+  .portal-tile:hover::before { opacity: 1; }
+  .portal-tile svg {
+    opacity: 0.45;
+    color: var(--pc, var(--accent));
+    transition: opacity 0.18s;
+    flex-shrink: 0;
+  }
+  .portal-tile:hover svg { opacity: 1; }
+
   .bulk-apply {
     font-family: 'Syne', sans-serif; font-weight: 600; font-size: 12px;
     padding: 8px 14px; border-radius: 7px; cursor: pointer;
-    background: var(--surface); border: 1px solid var(--border);
-    color: var(--text); transition: all 0.15s;
+    background: var(--surface); border: 1.5px solid #e8c44a;
+    color: #e8c44a; transition: all 0.15s;
     display: flex; align-items: center; gap: 6px; white-space: nowrap;
+    box-shadow: 0 0 0 0 rgba(232,196,74,0);
   }
-  .bulk-apply:hover { border-color: var(--accent); color: var(--accent); }
+  .bulk-apply:hover {
+    background: rgba(232,196,74,0.1);
+    border-color: #f5d86e;
+    color: #f5d86e;
+    box-shadow: 0 0 12px rgba(232,196,74,0.25);
+    transform: translateY(-1px);
+  }
   .bulk-hint { font-size: 11px; color: var(--muted); }
 
   /* REFERENCE PHOTO PANEL */
   .ref-photo-panel {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
     border-radius: var(--card-radius);
     padding: 24px;
     margin-top: 32px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.15);
   }
   .ref-photo-panel .section-label { margin-bottom: 10px; }
   .ref-hint { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
@@ -339,34 +465,74 @@
     object-fit: contain; display: block;
     border-radius: 8px;
   }
-  .paste-zone-empty {
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-    pointer-events: none;
+  .ref-slots {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
   }
-  .paste-zone-empty svg { opacity: 0.3; }
-  .paste-zone-empty p {
-    font-family: 'DM Mono', monospace; font-size: 11px;
-    letter-spacing: 1.5px; color: var(--muted); text-align: center;
+  .ref-slot {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    aspect-ratio: 4/3;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative; overflow: hidden;
+    background: var(--surface2);
   }
-  .paste-zone-empty small { font-size: 11px; color: var(--muted); opacity: 0.7; }
-  .ref-photo-clear {
-    margin-top: 10px;
-    font-family: 'DM Sans', sans-serif; font-size: 12px;
-    color: var(--muted); background: transparent;
-    border: 1px solid var(--border); border-radius: 6px;
-    padding: 5px 12px; cursor: pointer; transition: all 0.15s;
-    display: none;
+  .ref-slot:hover, .ref-slot.dragover {
+    border-color: var(--accent);
+    background: rgba(91,156,246,0.06);
   }
-  .ref-photo-clear:hover { border-color: var(--red); color: var(--red); }
+  .ref-slot.has-image {
+    border-style: solid;
+    border-color: var(--border);
+  }
+  .ref-slot img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    border-radius: 8px;
+  }
+  .ref-slot-empty {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    pointer-events: none; padding: 8px;
+  }
+  .ref-slot-empty svg { opacity: 0.3; }
+  .ref-slot-empty span {
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 1.2px; color: var(--muted); text-align: center;
+    text-transform: uppercase;
+  }
+  .ref-slot-num {
+    position: absolute; top: 6px; left: 6px;
+    background: rgba(14,15,19,0.75); backdrop-filter: blur(3px);
+    border: 1px solid var(--border); border-radius: 4px;
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    color: var(--accent); padding: 2px 6px; pointer-events: none;
+  }
+  .ref-slot-remove {
+    position: absolute; top: 6px; right: 6px;
+    background: rgba(14,15,19,0.8);
+    border: 1px solid rgba(248,113,113,0.4);
+    border-radius: 4px; color: var(--red);
+    font-size: 13px; width: 22px; height: 22px;
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .ref-slot.has-image .ref-slot-remove { display: flex; }
+  .ref-slot-remove:hover { background: rgba(248,113,113,0.2); }
 
   /* PRINT-ONLY: reference photo hidden on screen */
   /* COMMENT PANEL */
   .comment-panel {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-left: 3px solid rgba(74,222,128,0.5);
     border-radius: var(--card-radius);
     padding: 22px 24px;
     margin-bottom: 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
   }
   .comment-panel .section-label { margin-bottom: 10px; }
   .comment-textarea {
@@ -400,9 +566,10 @@
   /* ─── ALL PRINT STYLES ─── */
   @media print {
     body { background: #fff !important; color: #111 !important; }
-    body::before { display: none; }
+    body::before, body::after { display: none; }
     .form-area, .btn-row, #validation-msg, header .subtitle,
-    .ref-photo-panel, .btn-print, .comment-textarea, .comment-hint { display: none !important; }
+    .ref-photo-panel, .btn-print, .comment-textarea, .comment-hint,
+    .portals-bar { display: none !important; }
     .comment-panel {
       background: #f4f7fb !important;
       border: 1px solid #c8d8ee !important;
@@ -449,9 +616,9 @@
     .divider-line    { background: #cbd5e1 !important; }
     .listings-grid   { grid-template-columns: repeat(2, 1fr) !important; }
     .listings-header .section-label { display: block !important; }
-    /* Reference photo — separate page at the end */
-    #ref-photo-print.has-photo {
-      display: block !important;
+    /* Reference photos — separate pages at the end */
+    #ref-photo-print.has-photo { display: block !important; }
+    .ref-print-page {
       page-break-before: always;
       padding: 24px;
     }
@@ -480,9 +647,10 @@
   .modal-overlay.active { display: flex; }
   .modal-box {
     background: var(--surface); border: 1px solid var(--border);
+    border-top: 2px solid var(--accent);
     border-radius: 16px; padding: 28px; width: 680px; max-width: 95vw;
     max-height: 85vh; overflow-y: auto;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    box-shadow: 0 32px 80px rgba(0,0,0,0.65), 0 0 0 1px rgba(91,156,246,0.08);
     animation: fadeUp 0.2s ease;
   }
   .modal-title {
@@ -558,12 +726,43 @@
 <div class="container">
 
   <header>
-    <div class="logo-mark"> </div>
+    <div class="logo-mark">AO</div>
     <div>
       <h1>Zestawienie <span>Ogłoszeń</span></h1>
       <p class="subtitle">Wklej linki, podaj zdjęcia, ceny i korekty — wygeneruj raport PDF</p>
     </div>
   </header>
+
+  <!-- PORTAL LINKS -->
+  <div class="portals-bar">
+    <div class="portals-label">▸ Portale ogłoszeniowe</div>
+    <div class="portals-grid">
+      <a href="https://www.otomoto.pl" target="_blank" class="portal-tile" style="--pc:#e84c00">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        otomoto.pl
+      </a>
+      <a href="https://www.olx.pl/motoryzacja" target="_blank" class="portal-tile" style="--pc:#2d68f0">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        olx.pl
+      </a>
+      <a href="https://gratka.pl/motoryzacja" target="_blank" class="portal-tile" style="--pc:#e4001b">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        gratka.pl
+      </a>
+      <a href="https://sprzedajemy.pl/motoryzacja" target="_blank" class="portal-tile" style="--pc:#00aa55">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        sprzedajemy.pl
+      </a>
+      <a href="https://www.autoplac.pl" target="_blank" class="portal-tile" style="--pc:#7b2d8b">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        autoplac.pl
+      </a>
+      <a href="https://www.gieldaklasykow.pl" target="_blank" class="portal-tile" style="--pc:#c8910a">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        gieldaklasykow.pl
+      </a>
+    </div>
+  </div>
 
   <div class="form-area">
     <div class="section-label">▸ Dane wejściowe</div>
@@ -668,34 +867,19 @@
 
   <!-- REFERENCE PHOTO PANEL (always visible) -->
   <div class="ref-photo-panel" id="ref-photo-panel">
-    <div class="section-label">▸ Zrzut ekranu z wyszukiwania </div>
+    <div class="section-label">&#9658; Zrzut ekranu z wyszukiwania</div>
     <p class="ref-hint">
-      Wklej zdjęcie ze schowka (<strong>Ctrl+V</strong>), zrób PrtSc i wklej, lub przeciągnij plik obrazka.<br>
-      Zdjęcie pojawi się na końcu wydruku jako osobna strona.
+      Wklej zdjęcie ze schowka (<strong>Ctrl+V</strong>), przeciągnij plik lub kliknij slot, aby dodać.<br>
+      Możesz dodać do <strong>5 zdjęć</strong> — każde pojawi się na wydruku jako osobna strona.
     </p>
-    <div class="paste-zone" id="paste-zone" tabindex="0"
-      onclick="document.getElementById('ref-file-input').click()"
-      ondragover="event.preventDefault();this.classList.add('dragover')"
-      ondragleave="this.classList.remove('dragover')"
-      ondrop="handleDrop(event)">
-      <div class="paste-zone-empty" id="paste-empty">
-        <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
-          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/>
-          <circle cx="8.5" cy="8.5" r="1.5"/>
-        </svg>
-        <p>KLIKNIJ · PRZECIĄGNIJ · LUB CTRL+V</p>
-        <small>PNG · JPG · BMP · zrzut ekranu (PrtSc)</small>
-      </div>
+    <div class="ref-slots" id="ref-slots">
+      <!-- slots rendered by JS -->
     </div>
     <input type="file" id="ref-file-input" accept="image/*" style="display:none" onchange="handleFileInput(this)">
-    <button class="ref-photo-clear" id="ref-clear-btn" onclick="clearRefPhoto()">✕ Usuń zdjęcie</button>
   </div>
 
-  <!-- PRINT-ONLY: reference photo on separate page -->
-  <div id="ref-photo-print">
-    <div class="ref-print-header">▸ ZDJĘCIE POGLĄDOWE</div>
-    <img id="ref-photo-print-img" src="" alt="Zdjęcie poglądowe" />
-  </div>
+  <!-- PRINT-ONLY: reference photos on separate pages -->
+  <div id="ref-photo-print"></div>
 
 </div>
 
@@ -993,80 +1177,136 @@
       const el = document.getElementById('corr-' + e.id);
       if (el) el.value = val;
     });
+
+    // Auto-append comment about bulk correction
+    const sign = parseFloat(val) > 0 ? '+' : '';
+    const autoText = 'Zastosowano zbiorcz\u0105 korekt\u0119 negocjacyjn\u0105 w wysoko\u015bci ' + sign + val + '%, co jest warto\u015bci\u0105 reprezentatywn\u0105 dla obecnej kondycji rynku wt\u00f3rnego pojazd\u00f3w osobowych. Korekta uwzgl\u0119dnia statystyczne ryzyko wyst\u0105pienia wad ukrytych oraz koszt\u00f3w przywr\u00f3cenia pojazdu do stanu deklarowanego w og\u0142oszeniu, kt\u00f3re s\u0105 podstaw\u0105 do obni\u017cenia ceny ko\u0144cowej podczas finalizacji transakcji.';
+    const ta = document.getElementById('comment-textarea');
+    const printBlock = document.getElementById('comment-print-block');
+    const marker = 'Zastosowano zbiorcz\u0105 korekt\u0119 negocjacyjn\u0105';
+    let current = ta.value;
+    const idx = current.indexOf(marker);
+    if (idx !== -1) {
+      const before = current.substring(0, idx).replace(/\n+$/, '');
+      const afterBlock = current.substring(idx);
+      const nextBreak = afterBlock.search(/\n\s*\n/);
+      const after = nextBreak !== -1 ? afterBlock.substring(nextBreak).replace(/^\n+/, '') : '';
+      const parts = [before, autoText, after].filter(s => s.trim() !== '');
+      ta.value = parts.join('\n\n');
+    } else {
+      ta.value = current ? current.trimEnd() + '\n\n' + autoText : autoText;
+    }
+    printBlock.textContent = ta.value;
   }
 
-  /* ── Reference photo ── */
-  let refPhotoDataUrl = null;
+  /* ── Reference photos (up to 5 slots) ── */
+  const MAX_REF_PHOTOS = 5;
+  let refPhotos = Array(MAX_REF_PHOTOS).fill(null); // null = empty slot
+  let activeSlotIndex = null; // which slot is targeted by file picker / paste
 
-  function setRefPhoto(dataUrl) {
-    refPhotoDataUrl = dataUrl;
-    const zone  = document.getElementById('paste-zone');
-    const empty = document.getElementById('paste-empty');
-    const clearBtn = document.getElementById('ref-clear-btn');
-    const printImg = document.getElementById('ref-photo-print-img');
-
-    empty.style.display = 'none';
-    zone.classList.add('has-image');
-    zone.classList.remove('dragover');
-
-    // remove old preview img if any
-    const old = zone.querySelector('img');
-    if (old) old.remove();
-
-    const img = document.createElement('img');
-    img.src = dataUrl;
-    zone.appendChild(img);
-
-    clearBtn.style.display = 'inline-block';
-    printImg.src = dataUrl;
-    document.getElementById('ref-photo-print').classList.add('has-photo');
+  function renderRefSlots() {
+    const container = document.getElementById('ref-slots');
+    container.innerHTML = '';
+    for (let i = 0; i < MAX_REF_PHOTOS; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'ref-slot' + (refPhotos[i] ? ' has-image' : '');
+      slot.dataset.idx = i;
+      slot.setAttribute('tabindex', '0');
+      slot.innerHTML = `
+        <span class="ref-slot-num">#${i+1}</span>
+        ${refPhotos[i]
+          ? `<img src="${refPhotos[i]}" alt="Zdjęcie ${i+1}" />`
+          : `<div class="ref-slot-empty">
+              <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M3 15l5-5 4 4 3-3 6 6"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+              </svg>
+              <span>Dodaj zdjęcie</span>
+            </div>`
+        }
+        <button class="ref-slot-remove" title="Usuń zdjęcie" onclick="removeRefPhoto(event,${i})">×</button>
+      `;
+      slot.addEventListener('click', () => openSlotPicker(i));
+      slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('dragover'); });
+      slot.addEventListener('dragleave', () => slot.classList.remove('dragover'));
+      slot.addEventListener('drop', e => { e.preventDefault(); slot.classList.remove('dragover'); handleSlotDrop(e, i); });
+      container.appendChild(slot);
+    }
+    updateRefPhotoPrint();
   }
 
-  function clearRefPhoto() {
-    refPhotoDataUrl = null;
-    const zone  = document.getElementById('paste-zone');
-    const empty = document.getElementById('paste-empty');
-    const clearBtn = document.getElementById('ref-clear-btn');
-    const old = zone.querySelector('img');
-    if (old) old.remove();
-    empty.style.display = 'flex';
-    zone.classList.remove('has-image');
-    clearBtn.style.display = 'none';
-    document.getElementById('ref-photo-print-img').src = '';
-    document.getElementById('ref-photo-print').classList.remove('has-photo');
+  function openSlotPicker(idx) {
+    activeSlotIndex = idx;
+    document.getElementById('ref-file-input').click();
+  }
+
+  function removeRefPhoto(e, idx) {
+    e.stopPropagation();
+    refPhotos[idx] = null;
+    renderRefSlots();
+  }
+
+  function setSlotPhoto(idx, dataUrl) {
+    refPhotos[idx] = dataUrl;
+    renderRefSlots();
   }
 
   function handleFileInput(input) {
     const file = input.files[0];
     if (!file || !file.type.startsWith('image/')) return;
     const reader = new FileReader();
-    reader.onload = e => setRefPhoto(e.target.result);
+    const idx = activeSlotIndex !== null ? activeSlotIndex : refPhotos.indexOf(null);
+    const targetIdx = idx >= 0 ? idx : 0;
+    reader.onload = e => setSlotPhoto(targetIdx, e.target.result);
     reader.readAsDataURL(file);
     input.value = '';
+    activeSlotIndex = null;
   }
 
-  function handleDrop(e) {
-    e.preventDefault();
+  function handleSlotDrop(e, idx) {
     const file = e.dataTransfer.files[0];
     if (!file || !file.type.startsWith('image/')) return;
     const reader = new FileReader();
-    reader.onload = ev => setRefPhoto(ev.target.result);
+    reader.onload = ev => setSlotPhoto(idx, ev.target.result);
     reader.readAsDataURL(file);
   }
 
-  // Global paste listener — Ctrl+V anywhere on the page
+  // Global paste listener — fills first empty slot
   document.addEventListener('paste', e => {
     const items = (e.clipboardData || e.originalEvent.clipboardData).items;
     for (const item of items) {
       if (item.type.startsWith('image/')) {
         const blob = item.getAsFile();
         const reader = new FileReader();
-        reader.onload = ev => setRefPhoto(ev.target.result);
+        const idx = refPhotos.indexOf(null);
+        if (idx === -1) return; // all slots full
+        reader.onload = ev => setSlotPhoto(idx, ev.target.result);
         reader.readAsDataURL(blob);
         break;
       }
     }
   });
+
+  function updateRefPhotoPrint() {
+    const container = document.getElementById('ref-photo-print');
+    const filled = refPhotos.filter(Boolean);
+    if (filled.length === 0) {
+      container.classList.remove('has-photo');
+      container.innerHTML = '';
+      return;
+    }
+    container.classList.add('has-photo');
+    container.innerHTML = filled.map((src, i) => `
+      <div class="ref-print-page">
+        <div class="ref-print-header">&#9658; ZDJI&#x118;CIE POGL&#x104;DOWE ${filled.length > 1 ? (i+1) + '/' + filled.length : ''}</div>
+        <img src="${src}" alt="Zdj&#x119;cie pogl&#x105;dowe ${i+1}" />
+      </div>
+    `).join('');
+  }
+
+  // init slots on load
+  renderRefSlots();
 
 
   /* ═══════════════════════════════
