@@ -319,7 +319,21 @@
   }
   .listing-url:hover { color: var(--accent); }
 
-  .price-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .listing-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600; font-size: 13px;
+    color: var(--text);
+    margin-bottom: 4px;
+    line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .listing-mileage {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--accent2);
+    margin-bottom: 8px;
+  }
+  .listing-mileage svg { opacity: 0.7; flex-shrink: 0; }
   .price-block { text-align:center; flex:1; }
   .price-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
   .price-val { font-family:'Syne',sans-serif; font-weight:700; font-size:14px; }
@@ -607,13 +621,30 @@
     .stat-card.avg-corr .stat-value { color: #d97706 !important; }
     .stat-card.corrected .stat-value { color: #16a34a !important; }
     .stat-sub { color: #6b7280 !important; }
-    .listing-url { color: #1a56a8 !important; word-break: break-all; }
+    .listing-name  { color: #1e293b !important; }
+    .listing-mileage { color: #0369a1 !important; }
     .price-val.base  { color: #1e293b !important; }
     .price-val.final { color: #16a34a !important; }
     .corr-badge.pos  { background: #dcfce7 !important; color: #16a34a !important; border-color: #86efac !important; }
     .corr-badge.neg  { background: #fee2e2 !important; color: #dc2626 !important; border-color: #fca5a5 !important; }
     .corr-badge.zero { background: #f1f5f9 !important; color: #6b7280 !important; }
     .divider-line    { background: #cbd5e1 !important; }
+    .price-row {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 4px !important;
+      flex-wrap: nowrap !important;
+    }
+    .price-block { flex: 1 !important; text-align: center !important; }
+    .price-label {
+      font-size: 7px !important;
+      letter-spacing: 1px !important;
+      margin-bottom: 2px !important;
+    }
+    .price-val { font-size: 11px !important; }
+    .corr-badge { font-size: 9px !important; padding: 1px 5px !important; }
+    .divider-line { width: 1px !important; height: 28px !important; flex-shrink: 0 !important; }
     .listings-grid   { grid-template-columns: repeat(2, 1fr) !important; }
     .listings-header .section-label { display: block !important; }
     /* Reference photos — separate pages at the end */
@@ -928,6 +959,14 @@
             <div class="map-label">KOREKTA (%)</div>
             <select class="map-select" id="map-corr"></select>
           </div>
+          <div class="map-row">
+            <div class="map-label">PRZEBIEG (KM)</div>
+            <select class="map-select" id="map-mileage"></select>
+          </div>
+          <div class="map-row">
+            <div class="map-label">NAZWA OGŁOSZENIA</div>
+            <select class="map-select" id="map-name"></select>
+          </div>
         </div>
       </div>
 
@@ -956,7 +995,7 @@
 
   function addEntry() {
     if (entries.length >= 100) return;
-    entries.push({ id: ++idCounter, url:'', imgUrl:'', price:'', correction:'' });
+    entries.push({ id: ++idCounter, url:'', imgUrl:'', price:'', correction:'', mileage:'', name:'' });
     renderEntries();
     updateCounter();
   }
@@ -1091,7 +1130,9 @@
       final:   finals[i],
       index:   i+1,
       domain:  getDomain(e.url),
-      color:   getDomainColor(getDomain(e.url))
+      color:   getDomainColor(getDomain(e.url)),
+      mileage: e.mileage || '',
+      name:    e.name    || ''
     }));
 
     const grid = document.getElementById('listings-grid');
@@ -1124,7 +1165,12 @@
         ${thumbHtml}
         <div class="listing-body">
           <div class="listing-index">OGŁOSZENIE ${String(item.index).padStart(2,'0')} · ${item.domain}</div>
+          ${item.name ? `<div class="listing-name">${esc(item.name)}</div>` : ''}
           <a href="${esc(item.url)}" target="_blank" class="listing-url">${item.url}</a>
+          ${item.mileage ? `<div class="listing-mileage">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            ${new Intl.NumberFormat('pl-PL').format(parseInt(item.mileage))} km
+          </div>` : ''}
           <div class="price-row">
             <div class="price-block">
               <div class="price-label">Cena</div>
@@ -1416,7 +1462,7 @@
       return idx >= 0 ? idx + 1 : 0; // +1 because opts[0] = skip
     };
 
-    ['map-url','map-price','map-img','map-corr'].forEach(id => {
+    ['map-url','map-price','map-img','map-corr','map-mileage','map-name'].forEach(id => {
       const sel = document.getElementById(id);
       sel.innerHTML = opts.map((o,i) => `<option value="${i}">${o}</option>`).join('');
     });
@@ -1437,6 +1483,8 @@
     document.getElementById('map-price').value = detect(['cena','price','kwota','wartość','koszt']);
     document.getElementById('map-img').value   = detect(['zdję','foto','img','photo','obraz','thumb']);
     document.getElementById('map-corr').value  = detect(['korekta','corr','rabat','procent','%']);
+    document.getElementById('map-mileage').value = detect(['przebieg','km','mileage','przebieg_km','kilometry','km_przebieg']);
+    document.getElementById('map-name').value    = detect(['nazwa','tytuł','tytul','title','name','opis','ogłoszenie','model','marka']);
 
     buildPreview();
     document.getElementById('map-section').style.display = 'block';
@@ -1444,7 +1492,7 @@
     document.getElementById('do-import-btn').disabled = false;
 
     // re-build preview on column change
-    ['map-url','map-price','map-img','map-corr'].forEach(id =>
+    ['map-url','map-price','map-img','map-corr','map-mileage','map-name'].forEach(id =>
       document.getElementById(id).addEventListener('change', buildPreview)
     );
   }
@@ -1455,13 +1503,15 @@
   }
 
   function buildPreview() {
-    const colUrl   = getColIdx('map-url');
-    const colPrice = getColIdx('map-price');
-    const colImg   = getColIdx('map-img');
-    const colCorr  = getColIdx('map-corr');
+    const colUrl     = getColIdx('map-url');
+    const colPrice   = getColIdx('map-price');
+    const colImg     = getColIdx('map-img');
+    const colCorr    = getColIdx('map-corr');
+    const colMileage = getColIdx('map-mileage');
+    const colName    = getColIdx('map-name');
 
     const table = document.getElementById('preview-table');
-    const heads = ['#','Link ogłoszenia','Cena','URL zdjęcia','Korekta %'];
+    const heads = ['#','Link ogłoszenia','Cena','URL zdjęcia','Korekta %','Przebieg km','Nazwa'];
     table.innerHTML = '<tr>' + heads.map(h => `<th>${h}</th>`).join('') + '</tr>'
       + importRows.slice(0,5).map((row, i) => {
         const get = idx => idx >= 0 ? (row[idx] || '—') : '—';
@@ -1471,6 +1521,8 @@
           <td>${get(colPrice)}</td>
           <td>${get(colImg)}</td>
           <td>${get(colCorr)}</td>
+          <td>${get(colMileage)}</td>
+          <td>${get(colName)}</td>
         </tr>`;
       }).join('');
   }
@@ -1487,10 +1539,12 @@
   }
 
   function doImport() {
-    const colUrl   = getColIdx('map-url');
-    const colPrice = getColIdx('map-price');
-    const colImg   = getColIdx('map-img');
-    const colCorr  = getColIdx('map-corr');
+    const colUrl     = getColIdx('map-url');
+    const colPrice   = getColIdx('map-price');
+    const colImg     = getColIdx('map-img');
+    const colCorr    = getColIdx('map-corr');
+    const colMileage = getColIdx('map-mileage');
+    const colName    = getColIdx('map-name');
 
     if (colUrl < 0 || colPrice < 0) {
       setImportStatus('Musisz przypisać przynajmniej kolumny: Link i Cena.', 'err');
@@ -1507,8 +1561,10 @@
         id: ++idCounter,
         url,
         price,
-        imgUrl:     colImg  >= 0 ? (row[colImg]  || '').trim() : '',
-        correction: colCorr >= 0 ? (row[colCorr] || '').toString().replace(/[^0-9.\-]/g,'') : ''
+        imgUrl:     colImg     >= 0 ? (row[colImg]     || '').trim() : '',
+        correction: colCorr    >= 0 ? (row[colCorr]    || '').toString().replace(/[^0-9.\-]/g,'') : '',
+        mileage:    colMileage >= 0 ? (row[colMileage] || '').toString().replace(/[^0-9]/g,'') : '',
+        name:       colName    >= 0 ? (row[colName]    || '').trim() : ''
       });
       added++;
     });
@@ -1523,7 +1579,7 @@
   }
 
   function downloadTemplate() {
-    const csv = 'link_ogloszenia,cena,url_zdjecia,korekta_procent\nhttps://otodom.pl/przykladowe-ogloszenie,350000,https://example.com/foto.jpg,-5\nhttps://olx.pl/przykladowe-ogloszenie,420000,,0\n';
+    const csv = 'link_ogloszenia,cena,url_zdjecia,korekta_procent,przebieg_km,nazwa_ogloszenia\nhttps://otodom.pl/przykladowe-ogloszenie,350000,https://example.com/foto.jpg,-5,85000,Toyota Corolla 2019 benzyna\nhttps://olx.pl/przykladowe-ogloszenie,420000,,0,120000,BMW 3 2018 diesel\n';
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = 'szablon_import.csv'; a.click();
