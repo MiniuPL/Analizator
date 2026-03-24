@@ -44,7 +44,25 @@
     --card-radius: 12px;
   }
 
+  :root.light-theme {
+    --bg: #f8f9fc;
+    --surface: #ffffff;
+    --surface2: #f3f5f9;
+    --border: #d4dce8;
+    --accent: #2563eb;
+    --accent2: #0891b2;
+    --red: #dc2626;
+    --green: #16a34a;
+    --text: #0f172a;
+    --muted: #64748b;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Smooth transitions for theme switching */
+  * {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
 
   /* ── Scrollbar ── */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -177,18 +195,25 @@
   }
 
   input[type="text"], input[type="number"] {
-    background: #e8eef5;
-    border: 1px solid #b8c8db;
-    border-radius: 8px; color: #1a2a3a;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px; 
+    color: var(--text);
     font-family: 'DM Sans', sans-serif;
-    font-size: 13px; padding: 9px 12px; width: 100%;
+    font-size: 13px; 
+    padding: 9px 12px; 
+    width: 100%;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
-  input::placeholder { color: #7a96b0; }
+  input::placeholder { color: var(--muted); }
   input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(91,156,246,0.25);
+  }
+
+  .light-theme input:focus {
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
   }
 
   .pct-wrap { position: relative; display: flex; align-items: center; }
@@ -233,6 +258,33 @@
     letter-spacing: 0.5px;
   }
   .counter-badge span { color: var(--accent); font-weight: 500; }
+
+  /* Theme Toggle Button */
+  .theme-toggle {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+  .theme-toggle:hover {
+    background: var(--surface2);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: scale(1.05);
+  }
+  .theme-toggle:active {
+    transform: scale(0.95);
+  }
 
   .validation-msg { font-size: 12px; padding: 8px 14px; border-radius: 6px; margin-bottom: 16px; display: none; }
   .validation-msg.error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--red); display: block; }
@@ -762,6 +814,7 @@
       <h1>Zestawienie <span>Ogłoszeń</span></h1>
       <p class="subtitle">Wklej linki, podaj zdjęcia, ceny i korekty — wygeneruj raport PDF</p>
     </div>
+    <button class="theme-toggle" id="theme-toggle" title="Przełącz motyw kolorów" aria-label="Przełącz motyw">🌙</button>
   </header>
 
   <!-- PORTAL LINKS -->
@@ -1608,7 +1661,38 @@
     hideValidation();
   }
 
+  // Theme switching
+  function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    applyTheme(savedTheme);
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  }
+
+  function applyTheme(theme) {
+    const html = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    
+    if (theme === 'light') {
+      html.classList.add('light-theme');
+      toggle.textContent = '☀️';
+      toggle.title = 'Przełącz na motyw ciemny';
+      localStorage.setItem('theme', 'light');
+    } else {
+      html.classList.remove('light-theme');
+      toggle.textContent = '🌙';
+      toggle.title = 'Przełącz na motyw jasny';
+      localStorage.setItem('theme', 'dark');
+    }
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isLight = html.classList.contains('light-theme');
+    applyTheme(isLight ? 'dark' : 'light');
+  }
+
   // init
+  initTheme();
   addEntry(); addEntry(); addEntry();
 </script>
 </body>
