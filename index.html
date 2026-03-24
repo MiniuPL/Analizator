@@ -801,7 +801,7 @@
     <div class="bulk-bar">
       <label>Ustaw wszystkie korekty na:</label>
       <div class="pct-wrap">
-        <input type="number" id="bulk-corr" placeholder="np. -5" step="1" min="-99" max="99"
+        <input type="number" id="bulk-corr" placeholder="np. -5" step="any"
           style="background:#e8eef5;border-color:#b8c8db;color:#1a2a3a;" />
         <span class="pct-symbol">%</span>
       </div>
@@ -1025,7 +1025,7 @@
         <div class="pct-wrap">
           <input type="number" placeholder="np. -5" id="corr-${entry.id}"
             value="${esc(entry.correction)}"
-            step="1" min="-99" max="99"
+            step="any"
             oninput="upd(${entry.id},'correction',this.value)" />
           <span class="pct-symbol">%</span>
         </div>
@@ -1076,11 +1076,13 @@
 
   function readValues() {
     entries.forEach(e => {
-      const g = s => { const el = document.getElementById(s); return el ? el.value.trim() : ''; };
-      e.url        = g('url-'  + e.id);
-      e.imgUrl     = g('img-'  + e.id);
-      e.price      = g('price-'+ e.id);
-      e.correction = g('corr-' + e.id);
+      const g = s => { const el = document.getElementById(s); return el ? el.value : null; };
+      const url   = g('url-'   + e.id); if (url   !== null) e.url        = url.trim();
+      const img   = g('img-'   + e.id); if (img   !== null) e.imgUrl     = img.trim();
+      const price = g('price-' + e.id); if (price !== null) e.price      = price.trim();
+      const corr  = g('corr-'  + e.id);
+      if (corr !== null) e.correction = corr.trim();
+      // mileage and name have no DOM inputs — preserved from entry object as-is
     });
   }
 
@@ -1104,9 +1106,14 @@
 
     // Średnia korekty — tylko wpisy z jawnie wpisaną korektą (nie puste)
     const enteredCorrs = valid
-      .map(e => e.correction.toString().trim())
+      .map(e => {
+        const raw = e.correction;
+        if (raw === null || raw === undefined) return '';
+        // handle numeric 0 explicitly (falsy but valid)
+        return String(raw).trim();
+      })
       .filter(s => s !== '')
-      .map(s => parseFloat(s))
+      .map(s => parseFloat(s.replace(',', '.')))
       .filter(v => !isNaN(v));
     const avgCorrPct = enteredCorrs.length > 0
       ? enteredCorrs.reduce((a,b)=>a+b,0) / enteredCorrs.length
@@ -1562,8 +1569,10 @@
         url,
         price,
         imgUrl:     colImg     >= 0 ? (row[colImg]     || '').trim() : '',
-        correction: colCorr    >= 0 ? (row[colCorr]    || '').toString().replace(/[^0-9.\-]/g,'') : '',
-        mileage:    colMileage >= 0 ? (row[colMileage] || '').toString().replace(/[^0-9]/g,'') : '',
+        correction: colCorr    >= 0
+          ? String(row[colCorr] != null ? row[colCorr] : '').replace(/[^0-9.,\-]/g,'').replace(',','.')
+          : '',
+        mileage:    colMileage >= 0 ? String(row[colMileage] != null ? row[colMileage] : '').replace(/[^0-9]/g,'') : '',
         name:       colName    >= 0 ? (row[colName]    || '').trim() : ''
       });
       added++;
