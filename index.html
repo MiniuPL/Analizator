@@ -635,7 +635,7 @@
     body::before, body::after { display: none; }
     .form-area, .btn-row, #validation-msg, header .subtitle,
     .ref-photo-panel, .btn-print, .comment-textarea, .comment-hint,
-    .portals-bar { display: none !important; }
+    .portals-bar, .theme-toggle, .listings-header button { display: none !important; }
     .comment-panel {
       background: #f4f7fb !important;
       border: 1px solid #c8d8ee !important;
@@ -715,7 +715,15 @@
       border: 1px solid #c8d8ee; border-radius: 6px;
       display: block; margin: 0 auto;
     }
+      @page {
+    size: A4;
+    margin: 0.5cm;
   }
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }  
+    }
 
   /* IMPORT */
   .btn-import { background: #0f3460; color: #38bdf8; border: 1px solid #1e4d80; }
@@ -898,7 +906,7 @@
 
   <!-- REPORT -->
   <div id="report-section">
-    <div class="section-label">▸ Raport porównawczy</div>
+    <div class="section-label">▸ Raport porównawczy <span id="report-date" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:10px;font-weight:400;text-transform:none;"></span></div>
 
     <div class="stats-grid">
       <div class="stat-card total">
@@ -930,7 +938,7 @@
         class="comment-textarea"
         id="comment-textarea"
         placeholder="Wpisz komentarz, który pojawi się na wydruku pod wyliczeniami…"
-        oninput="document.getElementById('comment-print-block').textContent = this.value"
+        oninput="document.getElementById('comment-print-block').textContent = this.value; saveToLocalStorage();"
       ></textarea>
       <div class="comment-hint">Tekst pojawi się na wydruku pod tabelą statystyk.</div>
       <div class="comment-print-block" id="comment-print-block"></div>
@@ -938,12 +946,21 @@
 
     <div class="listings-header">
       <div class="section-label" style="margin:0">▸ Miniaturki ogłoszeń</div>
-      <button class="btn btn-print" onclick="window.print()">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/>
-        </svg>
-        Drukuj / Zapisz PDF
-      </button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-outline" onclick="exportToXLSX()" style="font-size:12px;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <path d="M14 2v6h6M8 13h2l2 4 2-4h2M8 17v-4M16 13v4"/>
+          </svg>
+          Eksportuj do XLSX
+        </button>
+        <button class="btn btn-print" onclick="window.print()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/>
+          </svg>
+          Drukuj / Zapisz PDF
+        </button>
+      </div>
     </div>
 
     <div class="listings-grid" id="listings-grid"></div>
@@ -1046,6 +1063,43 @@
   let idCounter = 0;
   let reportData = [];
 
+  /* ═══════════════════════════════
+     LOCALSTORAGE — zapis / odczyt
+  ═══════════════════════════════ */
+  function saveToLocalStorage() {
+    try {
+      localStorage.setItem('ao_entries',   JSON.stringify(entries));
+      localStorage.setItem('ao_idCounter', String(idCounter));
+      const ta = document.getElementById('comment-textarea');
+      if (ta) localStorage.setItem('ao_comment', ta.value);
+    } catch(e) { /* brak miejsca — ignoruj */ }
+  }
+
+  function loadFromLocalStorage() {
+    try {
+      const saved = localStorage.getItem('ao_entries');
+      if (!saved) return false;
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed) || parsed.length === 0) return false;
+      entries    = parsed;
+      idCounter  = parseInt(localStorage.getItem('ao_idCounter') || '0')
+                   || Math.max(...entries.map(e => e.id), 0);
+      return true;
+    } catch(e) { return false; }
+  }
+
+  /* ── formatowanie ceny na żywo ── */
+  function formatPriceDisplay(val) {
+    const num = String(val || '').replace(/\D/g, '');
+    if (!num) return '';
+    return num.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0'); // spacja nierozdzielająca
+  }
+
+  function getPriceRaw(id) {
+    const e = entries.find(e => e.id === id);
+    return e ? (e.price || '') : '';
+  }
+
   function addEntry() {
     if (entries.length >= 100) return;
     entries.push({ id: ++idCounter, url:'', imgUrl:'', price:'', correction:'', mileage:'', name:'' });
@@ -1072,8 +1126,10 @@
           value="${esc(entry.url)}" oninput="upd(${entry.id},'url',this.value)" />
         <input type="text" placeholder="https://.../zdjecie.jpg" id="img-${entry.id}"
           value="${esc(entry.imgUrl)}" oninput="upd(${entry.id},'imgUrl',this.value)" />
-        <input type="number" placeholder="np. 350000" id="price-${entry.id}"
-          value="${esc(entry.price)}" min="0"
+        <input type="text" inputmode="numeric" placeholder="np. 350\u00a0000" id="price-${entry.id}"
+          value="${formatPriceDisplay(entry.price)}"
+          onfocus="this.value=getPriceRaw(${entry.id})"
+          onblur="this.value=formatPriceDisplay(this.value)"
           oninput="upd(${entry.id},'price',this.value)" />
         <div class="pct-wrap">
           <input type="number" placeholder="np. -5" id="corr-${entry.id}"
@@ -1087,11 +1143,15 @@
       list.appendChild(row);
     });
     document.getElementById('add-btn').disabled = entries.length >= 100;
+    saveToLocalStorage();
   }
 
   function upd(id, key, val) {
     const e = entries.find(e => e.id === id);
-    if (e) e[key] = val.trim();
+    if (e) e[key] = (key === 'price')
+      ? val.replace(/[\s\u00a0]/g, '')   // usuń spacje z ceny
+      : val.trim();
+    saveToLocalStorage();
   }
 
   function updateCounter() {
@@ -1132,7 +1192,7 @@
       const g = s => { const el = document.getElementById(s); return el ? el.value : null; };
       const url   = g('url-'   + e.id); if (url   !== null) e.url        = url.trim();
       const img   = g('img-'   + e.id); if (img   !== null) e.imgUrl     = img.trim();
-      const price = g('price-' + e.id); if (price !== null) e.price      = price.trim();
+      const price = g('price-' + e.id); if (price !== null) e.price = price.replace(/[\s\u00a0]/g, '').trim();
       const corr  = g('corr-'  + e.id);
       if (corr !== null) e.correction = corr.trim();
       // mileage and name have no DOM inputs — preserved from entry object as-is
@@ -1174,6 +1234,11 @@
 
     document.getElementById('stat-count').textContent     = valid.length;
     document.getElementById('stat-avg').textContent       = formatPLN(avg);
+    // data raportu
+    const now = new Date();
+    document.getElementById('report-date').textContent =
+      now.toLocaleDateString('pl-PL', { day:'2-digit', month:'long', year:'numeric' })
+      + ', ' + now.toLocaleTimeString('pl-PL', { hour:'2-digit', minute:'2-digit' });
     if (avgCorrPct !== null) {
       const corrSign = avgCorrPct > 0 ? '+' : '';
       document.getElementById('stat-avg-corr').textContent = corrSign + avgCorrPct.toFixed(2) + '%';
@@ -1270,6 +1335,53 @@
   /* ═══════════════════════════════
      PDF EXPORT
   ═══════════════════════════════ */
+
+  /* ═══════════════════════════════
+     XLSX EXPORT
+  ═══════════════════════════════ */
+  function exportToXLSX() {
+    if (!reportData || reportData.length === 0) {
+      alert('Najpierw wygeneruj raport przyciskiem „Generuj raport".'); return;
+    }
+    const fmt = v => Math.round(v);
+    const header = ['#', 'Nazwa', 'Portal', 'Link ogłoszenia', 'Przebieg (km)',
+                    'Cena (zł)', 'Korekta (%)', 'Kwota korekty (zł)', 'Cena po korekcie (zł)'];
+    const rows = reportData.map(item => [
+      item.index,
+      item.name    || '',
+      item.domain,
+      item.url,
+      item.mileage ? parseInt(item.mileage) : '',
+      fmt(item.price),
+      item.corrPct,
+      fmt(item.corrAmt),
+      fmt(item.final)
+    ]);
+
+    // wiersz podsumowania
+    const avgPrice = reportData.reduce((s,i)=>s+i.price,0) / reportData.length;
+    const avgFinal = reportData.reduce((s,i)=>s+i.final,0) / reportData.length;
+    rows.push([]);
+    rows.push(['', '', '', 'ŚREDNIA', '', fmt(avgPrice), '', '', fmt(avgFinal)]);
+
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+
+    // szerokości kolumn
+    ws['!cols'] = [4,28,14,50,14,14,12,18,20].map(w => ({ wch: w }));
+
+    // pogrubienie nagłówka
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+      if (cell) cell.s = { font: { bold: true } };
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Ogłoszenia');
+
+    const date = new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, `analiza_ogloszen_${date}.xlsx`);
+  }
 
 
   /* ── Bulk correction ── */
@@ -1693,7 +1805,20 @@
 
   // init
   initTheme();
-  addEntry(); addEntry(); addEntry();
+  if (loadFromLocalStorage()) {
+    // Przywróć zapisane dane
+    renderEntries(); updateCounter();
+    const savedComment = localStorage.getItem('ao_comment');
+    if (savedComment) {
+      const ta = document.getElementById('comment-textarea');
+      const pb = document.getElementById('comment-print-block');
+      if (ta) ta.value = savedComment;
+      if (pb) pb.textContent = savedComment;
+    }
+  } else {
+    // Brak zapisanych danych — zacznij od 3 pustych wierszy
+    addEntry(); addEntry(); addEntry();
+  }
 </script>
 </body>
 </html>
